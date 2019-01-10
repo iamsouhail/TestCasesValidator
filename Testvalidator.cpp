@@ -298,8 +298,14 @@ public:
 
 
 int main(int argc,char **argv){
+
+
+    if(argc<=1){
+        std::cout<<"please give an your program in argument";
+        return 0;
+    }
     TestValidator a;
-    std::cout<<a.validate("sol.cpp");
+    std::cout<<a.validate(argv[1]);
     return 0;
 }
 
