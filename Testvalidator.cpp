@@ -80,6 +80,8 @@ public:
         std::pair<int,double> result = std::make_pair(0,0);
         std::string fileName = this->Folder_TT+"/"+this->File_inputInformations;
         std::ifstream myfile(fileName.c_str());
+        this->numberOfTestCases = 0;
+        this->timeLimitInSec = 0;
         myfile>>this->numberOfTestCases;
         myfile>>this->timeLimitInSec;
         return this->numberOfTestCases !=0;
@@ -143,7 +145,7 @@ public:
         FILE *pPipe;
         std::vector<std::string> result;
         clock_t t1,t2;
-
+        this->executing_time = 1000;
         Commande = "( "+Commande+" )"+" > "+this->Folder_TT+"/"+this->File_Temp;
         t1 = clock();
         // if the command cant be executed
@@ -190,9 +192,17 @@ public:
             }
         }
 
-        return 0;
+        return FILE_ERROR;
     }
 
+
+    /*
+        print a image to the screen
+    */
+    template<typename T>
+    void message(T msg){
+        std::cout<<msg<<std::endl;
+    }
 
     int validate(std::string file){
         bool ans;
@@ -200,19 +210,26 @@ public:
         int type_of_file;
 
         type_of_file = this->typeOfFile(file);
-        if(type_of_file == FILE_ERROR)
+        if(type_of_file == FILE_ERROR){
+            this->message("Le type de fichier n'est pas reconnu");
             return COMPILATION_ERROR;
+        }
         else if(type_of_file == CPP){
             commande = "g++ -o answer "+file;
         } else { // case of java
             commande = "javac "+file;
         }
+
         if(this->checkIfAfileExist(file) == false){
+            this->message("le fichier ("+file+") n'existe pas");
             return SYSTEM_ERROR;
         }
+        
         ans = this->compileCommand(commande.c_str());
-            if(!ans)
+            if(!ans){
+                this->message("Erreur de compilation");
                 return COMPILATION_ERROR;
+            }
         
         //executing the code 
         
@@ -227,9 +244,12 @@ public:
         } else { // cpp || c
             commande = "answer.exe < ";
         }
-        if(this->checkIfTTFolderExist() == false)
+        if(this->checkIfTTFolderExist() == false){
+            this->message("le TT Folder n'existe pas");
             return SYSTEM_ERROR;
+        }
         if(this->readInputInformations() == false){
+            this->message("il y a un probleme avec le fichier inputInformation de TT");
             return SYSTEM_ERROR;
         }
 
@@ -237,21 +257,31 @@ public:
         for(int i=1;i<=numberOfTestCases;i++){
             chemin1 =this->Folder_TT+"/"+ this->File_input+this->NumberToString<int>(i);
             chemin2 =this->Folder_TT+"/"+ this->File_output+this->NumberToString<int>(i);
-            if(this->checkIfAfileExist(chemin1) == false)
+            if(this->checkIfAfileExist(chemin1) == false){
+                this->message("le fichier ("+chemin1+") n'existe pas");
                 return SYSTEM_ERROR;
-            if(this->checkIfAfileExist(chemin2) == false)
+            }
+            if(this->checkIfAfileExist(chemin2) == false){
+                this->message("le fichier ("+chemin2+") n'existe pas");
                 return SYSTEM_ERROR;
+            }
             std::vector<std::string> test = this->executeCommand(commande+chemin1);
-            if(test.size() == 0)
-                
+            
+            if(test.size() == 0){
+                this->message("Il y a un probleme survenu au moment de l'execution");
                 return RUNTIME_ERROR;
-            if(this->executing_time>this->timeLimitInSec) 
+            }
+            if(this->executing_time>this->timeLimitInSec) {
+                this->message("Temps d'execution tres long : "+this->NumberToString(this->executing_time));
                 return TLE;
+            }
             if(this->areTheSame(test,this->readOutput(chemin2)) == false){
+                this->message("wrong answer dans le test : "+i);
                 return WRONG_ANSWER;
             }
         }
 
+        this->message("ACCEPTED");
         return ACCEPTED;            
         
     }
